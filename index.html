@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Rank Ladder Simulator</title>
+  <style>
+    :root {
+      --bg-color: #0f172a;
+      --card-bg: #1e293b;
+      --border-color: #334155;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --accent: #38bdf8;
+      --accent-hover: #0284c7;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      padding: 1rem;
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 600px;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: var(--accent);
+      font-size: 1.75rem;
+      font-weight: 800;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 1.25rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    h2 {
+      font-size: 1.1rem;
+      margin-bottom: 0.75rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    /* Simulator Display */
+    .simulator-display {
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    .rank-badge {
+      width: min(35vw, 130px);
+      height: min(35vw, 130px);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: min(10vw, 3.2rem);
+      font-weight: 900;
+      color: #fff;
+      text-shadow: 0 3px 6px rgba(0,0,0,0.6);
+      box-shadow: 0 0 25px rgba(255,255,255,0.15);
+      transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), background-color 0.3s ease;
+      margin: 0.5rem 0;
+    }
+
+    .rank-badge.pop {
+      transform: scale(1.18);
+    }
+
+    .score-text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .slider-container {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    /* Mobile Slider Styling */
+    input[type="range"] {
+      width: 100%;
+      height: 12px;
+      border-radius: 6px;
+      background: var(--border-color);
+      outline: none;
+      -webkit-appearance: none;
+      appearance: none;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    /* Quick Control Buttons */
+    .step-controls {
+      display: flex;
+      gap: 0.5rem;
+      justify-content: center;
+      width: 100%;
+    }
+
+    .quick-presets {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    button {
+      touch-action: manipulation;
+      min-height: 44px; /* Optimal mobile touch target size */
+      background-color: #334155;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 0.8rem;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.15s, transform 0.1s;
+    }
+
+    button:active {
+      transform: scale(0.96);
+      background-color: var(--accent-hover);
+    }
+
+    button.active {
+      background-color: var(--accent);
+      color: #0f172a;
+    }
+
+    .preset-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    /* Editable Rank List */
+    .rank-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    .rank-item {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(0, 0, 0, 0.25);
+      padding: 0.4rem 0.6rem;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.05);
+    }
+
+    .rank-item input[type="text"] {
+      background: #0f172a;
+      border: 1px solid var(--border-color);
+      color: #fff;
+      padding: 0.5rem;
+      border-radius: 6px;
+      flex: 1;
+      min-width: 0;
+      font-size: 1rem;
+      font-weight: 600;
+    }
+
+    .rank-item input[type="color"] {
+      -webkit-appearance: none;
+      border: none;
+      width: 40px;
+      height: 40px;
+      border-radius: 6px;
+      cursor: pointer;
+      background: none;
+    }
+
+    .rank-item input[type="color"]::-webkit-color-swatch-wrapper {
+      padding: 0;
+    }
+
+    .rank-item input[type="color"]::-webkit-color-swatch {
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+    }
+
+    .rank-order-btns {
+      display: flex;
+      gap: 0.2rem;
+    }
+
+    .btn-sm {
+      min-height: 40px;
+      min-width: 40px;
+      padding: 0;
+      font-size: 1rem;
+    }
+
+    .btn-danger {
+      background-color: #ef4444;
+      color: #fff;
+    }
+
+    .add-btn {
+      margin-top: 1rem;
+      width: 100%;
+      background-color: #10b981;
+      color: #ffffff;
+      font-size: 1rem;
+    }
+
+    /* Screen sizes adjustments */
+    @media (max-width: 400px) {
+      .preset-grid {
+        grid-template-columns: 1fr;
+      }
+      body {
+        padding: 0.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>Rank Simulator</h1>
+
+    <!-- Live Simulation Display -->
+    <div class="card simulator-display">
+      <h2>Simulation Result</h2>
+      <div id="badge" class="rank-badge">-</div>
+      <div id="score-text" class="score-text">0%</div>
+      
+      <div class="slider-container">
+        <input type="range" id="score-slider" min="0" max="100" value="0">
+        
+        <!-- Touch-Friendly Step Buttons -->
+        <div class="step-controls">
+          <button style="flex: 1;" onclick="adjustScore(-5)">-5%</button>
+          <button style="flex: 1;" onclick="adjustScore(-1)">-1%</button>
+          <button style="flex: 1;" onclick="adjustScore(1)">+1%</button>
+          <button style="flex: 1;" onclick="adjustScore(5)">+5%</button>
+        </div>
+
+        <!-- Quick Jump Buttons -->
+        <div class="quick-presets">
+          <button onclick="setScore(25)">25%</button>
+          <button onclick="setScore(50)">50%</button>
+          <button onclick="setScore(75)">75%</button>
+          <button onclick="setScore(100)">MAX</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Presets and Ladder Customizer -->
+    <div class="card">
+      <h2>Presets & Ranks Ladder</h2>
+      <div class="preset-grid">
+        <button id="btn-generic" onclick="loadPreset('generic')">Generic</button>
+        <button id="btn-pizzaTower" onclick="loadPreset('pizzaTower')">Pizza Tower</button>
+        <button id="btn-school" onclick="loadPreset('school')">School Test</button>
+      </div>
+
+      <div class="rank-list" id="rank-list">
+        <!-- Dynamic rank items generated here -->
+      </div>
+
+      <button class="add-btn" onclick="addRank()">+ Add Rank Level</button>
+    </div>
+  </div>
+
+  <script>
+    const PRESETS = {
+      generic: [
+        { name: "F", color: "#94a3b8" },
+        { name: "D", color: "#64748b" },
+        { name: "C", color: "#22c55e" },
+        { name: "B", color: "#3b82f6" },
+        { name: "A", color: "#a855f7" },
+        { name: "S", color: "#eab308" },
+        { name: "S+", color: "#f97316" },
+        { name: "S++", color: "#ef4444" },
+        { name: "S+++", color: "#ec4899" }
+      ],
+      pizzaTower: [
+        { name: "D", color: "#64748b" },
+        { name: "C", color: "#22c55e" },
+        { name: "B", color: "#3b82f6" },
+        { name: "A", color: "#eab308" },
+        { name: "S", color: "#f97316" },
+        { name: "P", color: "#a855f7" }
+      ],
+      school: [
+        { name: "F-", color: "#ef4444" },
+        { name: "F",  color: "#f87171" },
+        { name: "F+", color: "#fca5a5" },
+        { name: "E-", color: "#f97316" },
+        { name: "E",  color: "#fb923c" },
+        { name: "E+", color: "#ffedd5" },
+        { name: "D-", color: "#facc15" },
+        { name: "D",  color: "#fde047" },
+        { name: "D+", color: "#fef08a" },
+        { name: "C-", color: "#4ade80" },
+        { name: "C",  color: "#22c55e" },
+        { name: "C+", color: "#16a34a" },
+        { name: "B-", color: "#60a5fa" },
+        { name: "B",  color: "#3b82f6" },
+        { name: "B+", color: "#2563eb" },
+        { name: "A-", color: "#c084fc" },
+        { name: "A",  color: "#a855f7" },
+        { name: "A+", color: "#7e22ce" },
+        { name: "S-", color: "#f472b6" },
+        { name: "S",  color: "#ec4899" },
+        { name: "S+", color: "#db2777" }
+      ]
+    };
+
+    let activeRanks = [];
+
+    // DOM Elements
+    const rankListEl = document.getElementById("rank-list");
+    const sliderEl = document.getElementById("score-slider");
+    const badgeEl = document.getElementById("badge");
+    const scoreTextEl = document.getElementById("score-text");
+
+    function loadPreset(key) {
+      activeRanks = JSON.parse(JSON.stringify(PRESETS[key]));
+      
+      // Update button active state UI
+      ['generic', 'pizzaTower', 'school'].forEach(p => {
+        const btn = document.getElementById(`btn-${p}`);
+        if (btn) btn.classList.toggle('active', p === key);
+      });
+
+      renderRankList();
+      updateSimulation();
+    }
+
+    function renderRankList() {
+      rankListEl.innerHTML = "";
+      activeRanks.forEach((rank, index) => {
+        const item = document.createElement("div");
+        item.className = "rank-item";
+
+        item.innerHTML = `
+          <div class="rank-order-btns">
+            <button class="btn-sm" onclick="moveRank(${index}, -1)" ${index === 0 ? 'disabled' : ''}>▲</button>
+            <button class="btn-sm" onclick="moveRank(${index}, 1)" ${index === activeRanks.length - 1 ? 'disabled' : ''}>▼</button>
+          </div>
+          <input type="text" value="${rank.name}" oninput="updateRankName(${index}, this.value)">
+          <input type="color" value="${rank.color}" onchange="updateRankColor(${index}, this.value)">
+          <button class="btn-sm btn-danger" onclick="removeRank(${index})">✕</button>
+        `;
+
+        rankListEl.appendChild(item);
+      });
+    }
+
+    function moveRank(index, direction) {
+      const newIndex = index + direction;
+      if (newIndex < 0 || newIndex >= activeRanks.length) return;
+      const [moved] = activeRanks.splice(index, 1);
+      activeRanks.splice(newIndex, 0, moved);
+      renderRankList();
+      updateSimulation();
+    }
+
+    function addRank() {
+      activeRanks.push({ name: "NEW", color: "#38bdf8" });
+      renderRankList();
+      updateSimulation();
+    }
+
+    function removeRank(index) {
+      if (activeRanks.length <= 1) return;
+      activeRanks.splice(index, 1);
+      renderRankList();
+      updateSimulation();
+    }
+
+    function updateRankName(index, val) {
+      activeRanks[index].name = val;
+      updateSimulation();
+    }
+
+    function updateRankColor(index, val) {
+      activeRanks[index].color = val;
+      updateSimulation();
+    }
+
+    function adjustScore(amount) {
+      let currentVal = parseInt(sliderEl.value) || 0;
+      setScore(currentVal + amount);
+    }
+
+    function setScore(val) {
+      sliderEl.value = Math.max(0, Math.min(100, val));
+      updateSimulation();
+    }
+
+    function updateSimulation() {
+      const score = parseInt(sliderEl.value);
+      scoreTextEl.textContent = `${score}%`;
+
+      if (activeRanks.length === 0) {
+        badgeEl.textContent = "-";
+        badgeEl.style.backgroundColor = "#334155";
+        return;
+      }
+
+      const totalRanks = activeRanks.length;
+      let rankIndex = Math.floor((score / 100) * totalRanks);
+      if (rankIndex >= totalRanks) rankIndex = totalRanks - 1;
+
+      const currentRank = activeRanks[rankIndex];
+
+      if (badgeEl.textContent !== currentRank.name) {
+        badgeEl.classList.add("pop");
+        setTimeout(() => badgeEl.classList.remove("pop"), 200);
+      }
+
+      badgeEl.textContent = currentRank.name;
+      badgeEl.style.backgroundColor = currentRank.color;
+    }
+
+    // Touch and mouse slide listener
+    sliderEl.addEventListener("input", updateSimulation);
+
+    // Initial load
+    loadPreset("generic");
+  </script>
+</body>
+</html>
